@@ -1,0 +1,16 @@
+{
+  "name": "sync-simulator-backend",
+  "version": "1.0.0",
+  "description": "Backend bridge for the Process Synchronization Simulator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "winston": "^3.17.0",
+    "ws": "^8.18.0"
+  }
+}

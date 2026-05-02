@@ -1,0 +1,20 @@
+FROM node:20-slim
+
+# Install build tools for C compilation
+RUN apt-get update && apt-get install -y gcc make && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy and build C engine
+COPY core-c/ ./core-c/
+RUN cd core-c && make clean && make all
+
+# Copy and install backend
+COPY backend/package*.json ./backend/
+RUN cd backend && npm install --production
+
+COPY backend/ ./backend/
+
+EXPOSE 3001
+
+CMD ["node", "backend/server.js"]
