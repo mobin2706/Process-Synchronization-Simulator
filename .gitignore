@@ -4,5 +4,8 @@ node_modules/
 # OS files
 .DS_Store
 
+# Local Documentation
+docs/
+
 # OS files
 .DS_Store
