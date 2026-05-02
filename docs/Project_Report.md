@@ -3,48 +3,113 @@
 ## 1. Project Overview
 The **Real-Time Process Synchronization Simulator** is a high-fidelity academic project designed to solve and visualize the classic **Producer-Consumer Problem**. The system demonstrates how multiple concurrent threads can share a bounded resource (a circular buffer) safely using **POSIX Semaphores**. By providing a real-time, glassmorphic dashboard, the project makes abstract operating system concepts like mutual exclusion, race conditions, and deadlocks tangible and easy to understand.
 
+This project implements a multi-tier architecture:
+- A high-performance **C Engine** for thread-level synchronization.
+- A **Node.js/Express Backend** that orchestrates the engine and streams data.
+- A modern **React Frontend** for high-frequency visual updates and performance monitoring.
+
+---
+
 ## 2. Module-Wise Breakdown
-- **Core Engine (C)**: Implements the low-level synchronization logic using `pthreads` and `semaphores`. It handles thread creation, buffer management, and thread-safe JSON logging.
-- **Backend Orchestrator (Node.js)**: Acts as a bridge, spawning the C engine as a child process and streaming its output to the web via WebSockets.
-- **Frontend Dashboard (React)**: A modern, real-time visualization layer built with Vite, Tailwind CSS v4, and Framer Motion. It provides a "Mission Control" interface for monitoring every thread's state and buffer activity.
+
+### 2.1 Core Engine (C)
+The heart of the simulator, implemented in C using POSIX threads (`pthreads`) and semaphores (`semaphore.h`).
+- **`main.c`**: Orchestrates thread lifecycle, signal handling, and configuration parsing.
+- **`sync.c`**: Manages the three semaphores (`mutex`, `empty`, `full`) to ensure safe access to the shared buffer.
+- **`buffer.c`**: Implements a circular ring-buffer with thread-safe access patterns.
+- **`logger.c`**: Outputs real-time state snapshots as structured JSON lines for IPC.
+
+### 2.2 Backend Orchestrator (Node.js)
+Acts as a bridge between the low-level C process and the web interface.
+- **`engine.js`**: Manages spawning the C process, capturing its `stdout`, and parsing event packets.
+- **`server.js`**: Hosts the Express REST API and a WebSocket server for real-time data streaming.
+
+### 2.3 Frontend Dashboard (React)
+A sophisticated visualization layer built for real-time observability.
+- **Zustand Store**: Manages global state, event buffering, and a playback engine.
+- **Framer Motion**: Powers the transition animations.
+- **Recharts**: Provides live analytics for throughput and buffer utilization.
+
+---
 
 ## 3. Functionalities
-- **Live Visualization**: Real-time animation of producers generating data and consumers removing it.
-- **Semaphore Monitoring**: Dynamic gauges tracking the values of `mutex`, `empty`, and `full` semaphores.
-- **Thread Lifecycle Tracking**: A dedicated glossary and live indicators for thread states (Running, Waiting, Blocked, Idle).
-- **Performance Analytics**: Real-time throughput (ops/sec) and buffer utilization charts.
-- **System Configuration**: Fine-grained control over thread counts, buffer size, and execution speed.
-- **Presentation Mode**: A "Cinema View" that maximizes the visualization for demonstrations by hiding UI controls.
+- **Live Visualization**: Real-time animation of producers and consumers.
+- **Semaphore Monitoring**: Dynamic gauges tracking `mutex`, `empty`, and `full`.
+- **Thread Tracking**: Real-time status of each thread (Running, Waiting, Blocked).
+- **Performance Analytics**: Live charts for throughput and buffer usage.
+- **Configuration**: Adjustable thread counts, buffer size, and delays.
+- **Presentation Mode**: Full-screen cinema view for demonstrations.
+
+---
 
 ## 4. Technology Used
+
 ### • Programming Languages:
-- **C**: For the core high-performance synchronization engine.
-- **JavaScript (ES6+)**: For the backend server and frontend dashboard.
+- **C**: Core synchronization logic.
+- **JavaScript (ES6+)**: Backend server and frontend dashboard.
 
 ### • Libraries and Tools:
-- **C Libraries**: `pthread.h`, `semaphore.h` (POSIX), `stdio.h`.
-- **Node.js**: `Express` (REST API), `ws` (WebSockets).
-- **Frontend**: `React.js`, `Zustand` (State Management), `Framer Motion` (Animations), `Recharts` (Analytics).
-- **Styling**: `Tailwind CSS v4` with glassmorphism design tokens.
+- **Core**: `pthreads`, `semaphore.h`, `gcc`, `Make`.
+- **Backend**: `Node.js`, `Express`, `ws`, `Winston`.
+- **Frontend**: `React.js`, `Vite`, `Tailwind CSS v4`, `Zustand`, `Framer Motion`, `Recharts`.
 
 ### • Other Tools:
-- **GitHub**: Used for version control, branch management, and revision tracking.
-- **Make**: For automated compilation of the C engine.
-- **Vite**: For high-performance frontend building and hot-reloading.
+- **GitHub**: Version control and revision tracking.
+- **Docker**: Containerization and easy deployment.
+
+---
 
 ## 5. Flow Diagram
-![Project Flow Diagram](./diagram.png)
+
+```mermaid
+graph TB
+    subgraph "Frontend (React)"
+        UD[User Dashboard]
+        WSC[WebSocket Client]
+        ZS[Zustand Store]
+    end
+
+    subgraph "Backend (Node.js)"
+        ES[Express Server]
+        CEM[C Engine Manager]
+        WSS[WebSocket Server]
+    end
+
+    subgraph "Core Engine (C)"
+        PCT[Producer/Consumer Threads]
+        CB[Circular Buffer]
+        SEM[Semaphores]
+    end
+
+    UD -- "Start Simulation" --> ES
+    ES --> CEM
+    CEM -- "Spawn" --> PCT
+    PCT -- "insert/remove" --> CB
+    PCT -- "wait/post" --> SEM
+    PCT -- "STDOUT JSON" --> CEM
+    CEM --> WSS
+    WSS --> WSC
+    WSC --> ZS
+    ZS --> UD
+```
+
+---
 
 ## 6. Revision Tracking on GitHub
 - **Repository Name**: mobin2706/Process-Synchronization-Simulator
 - **GitHub Link**: [https://github.com/mobin2706/Process-Synchronization-Simulator](https://github.com/mobin2706/Process-Synchronization-Simulator)
 
+---
+
 ## 7. Conclusion and Future Scope
-The project successfully achieves its goal of providing a robust, visually engaging platform for learning process synchronization. The use of a multi-tier architecture (C/Node/React) ensures both performance and a premium user experience.
-**Future Scope**:
-- Implementation of **Priority-based Scheduling** for threads.
+The project successfully provides a robust platform for learning process synchronization. 
+
+### Future Scope:
+- Implementation of **Priority-based Scheduling**.
 - Support for **Reader-Writer** and **Dining Philosophers** problems.
-- Cloud deployment for remote collaboration and shared classroom demos.
+- Cloud deployment for remote collaboration.
+
+---
 
 ## 8. References
 - Silberschatz, A., Galvin, P. B., & Gagne, J. (2018). *Operating System Concepts*.
@@ -55,39 +120,150 @@ The project successfully achieves its goal of providing a robust, visually engag
 # Appendix
 
 ## A. AI-Generated Project Elaboration/Breakdown Report
-The project follows a **Real-Time Data Streaming Architecture**. The C Engine operates as a "Source of Truth," generating discrete synchronization events. These events are parsed by the Node.js layer which acts as a "Stream Transformer," converting raw process output into JSON packets. Finally, the React Frontend serves as a "Reactive Consumer," mapping these JSON packets to complex UI animations in under 16ms, ensuring a fluid 60fps visualization.
+The project follows a **Real-Time Event-Driven Architecture**. The process begins in the C Engine, which operates as the "Source of Truth." Each synchronization action (e.g., `sem_wait`) is a discrete event. The C Engine captures these events and emits them as structured JSON strings. 
+
+The Node.js layer acts as a "Stream Transformer," monitoring the process output and broadcasting it instantly via WebSockets. The React Frontend serves as a "Reactive Consumer," where the Zustand store receives these events and manages a playback queue. This allows the UI to render animations at a consistent 60fps, even if the backend process emits events in bursts, ensuring a fluid and intuitive visualization for the user.
 
 ## B. Problem Statement
-The **Producer-Consumer Problem** (or Bounded-Buffer Problem) is a classic example of a multi-process synchronization problem. The problem describes two processes, the producer and the consumer, who share a common, fixed-size buffer used as a queue. The producer's job is to generate data and put it into the buffer. At the same time, the consumer is consuming the data (i.e. removing it from the buffer), one piece at a time. The problem is to make sure that the producer won't try to add data into the buffer if it's full and that the consumer won't try to remove data from an empty buffer.
+The **Producer-Consumer Problem** involves two types of processes, producers and consumers, who share a common, fixed-size buffer used as a queue. The producer's job is to generate data and put it into the buffer. The consumer removes data from the buffer. The constraints are that the producer shouldn't add data to a full buffer, and the consumer shouldn't remove data from an empty buffer. Mutual exclusion must be maintained to prevent race conditions.
 
 ## C. Solution/Code:
-### 1. C Core Engine (`main.c`)
+
+### 1. C Engine Implementation
+
+#### core-c/include/common.h
 ```c
-// [main.c content]
-// Handles thread orchestration and semaphore initialization
+#ifndef COMMON_H
+#define COMMON_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+#include <time.h>
+#include <signal.h>
+
+#define MAX_BUFFER_SIZE 64
+#define MAX_THREADS 16
+
+typedef struct {
+    int num_producers;
+    int num_consumers;
+    int buffer_size;
+    int iterations;
+    int delay_ms;
+} SimConfig;
+
+typedef struct {
+    int id;
+    char name[32];
+    SimConfig *config;
+} ThreadArg;
+
+extern volatile sig_atomic_t g_running;
+#endif
 ```
 
-### 2. Synchronization Logic (`producer.c` & `consumer.c`)
+#### core-c/src/sync.c
 ```c
-// [producer.c]
-sem_wait(empty);
-sem_wait(mutex);
-// CRITICAL SECTION
-buffer_insert(val);
-sem_post(mutex);
-sem_post(full);
+#include "sync.h"
+#include <fcntl.h>
+
+static sem_t *sem_mutex, *sem_empty, *sem_full;
+
+int sync_init(int buffer_size) {
+    sem_unlink("/sim_mutex");
+    sem_unlink("/sim_empty");
+    sem_unlink("/sim_full");
+    sem_mutex = sem_open("/sim_mutex", O_CREAT, 0644, 1);
+    sem_empty = sem_open("/sim_empty", O_CREAT, 0644, buffer_size);
+    sem_full = sem_open("/sim_full", O_CREAT, 0644, 0);
+    return 0;
+}
+
+void sync_mutex_wait() { sem_wait(sem_mutex); }
+void sync_mutex_signal() { sem_post(sem_mutex); }
+void sync_empty_wait() { sem_wait(sem_empty); }
+void sync_empty_signal() { sem_post(sem_empty); }
+void sync_full_wait() { sem_wait(sem_full); }
+void sync_full_signal() { sem_post(sem_full); }
 ```
 
-### 3. Backend Bridge (`server.js`)
+#### core-c/src/producer.c
+```c
+#include "common.h"
+#include "sync.h"
+#include "logger.h"
+
+void *producer_func(void *arg) {
+    ThreadArg *targ = (ThreadArg *)arg;
+    for (int i = 0; i < targ->config->iterations && g_running; i++) {
+        int value = rand() % 100 + 1;
+        sync_empty_wait();
+        sync_mutex_wait();
+        // Insert into buffer
+        logger_event(targ->name, "produce", value, ...);
+        sync_mutex_signal();
+        sync_full_signal();
+        usleep(targ->config->delay_ms * 1000);
+    }
+    return NULL;
+}
+```
+
+### 2. Backend Implementation
+
+#### backend/server.js
 ```javascript
-// [server.js]
-// Spawns C engine and broadcasts events via WebSocket
+const express = require('express');
+const { WebSocketServer } = require('ws');
+const EngineManager = require('./services/engine');
+
+const app = express();
+const wss = new WebSocketServer({ port: 3001 });
+const engine = new EngineManager();
+
+engine.on('data', (data) => {
+    wss.clients.forEach(c => c.send(JSON.stringify(data)));
+});
+
+app.post('/api/start', (req, res) => {
+    engine.start(req.body);
+    res.json({ status: 'started' });
+});
 ```
 
-### 4. Frontend Layout (`App.jsx`)
+#### backend/services/engine.js
 ```javascript
-// [App.jsx]
-// Implements the high-fidelity 12x12 grid and Presentation Mode
+const { spawn } = require('child_process');
+const EventEmitter = require('events');
+
+class EngineManager extends EventEmitter {
+    start(config) {
+        this.process = spawn('./simulator', args);
+        this.process.stdout.on('data', (data) => {
+            data.toString().split('\n').forEach(line => {
+                if (line) this.emit('data', JSON.parse(line));
+            });
+        });
+    }
+}
 ```
 
-*(For full code listing, please refer to the attached source files in the repository)*
+### 3. Frontend State Management
+
+#### frontend/src/store/useSimulationStore.js
+```javascript
+import { create } from 'zustand';
+
+export const useSimulationStore = create((set, get) => ({
+    eventQueue: [],
+    connect: () => {
+        const ws = new WebSocket(WS_URL);
+        ws.onmessage = (msg) => {
+            const data = JSON.parse(msg.data);
+            set(state => ({ eventQueue: [...state.eventQueue, data] }));
+        };
+    }
+}));
+```
