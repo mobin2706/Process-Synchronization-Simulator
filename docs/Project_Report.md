@@ -33,37 +33,7 @@ The **Real-Time Process Synchronization Simulator** is a high-fidelity academic 
 - **Vite**: For high-performance frontend building and hot-reloading.
 
 ## 5. Flow Diagram
-```mermaid
-graph TD
-    subgraph "Frontend (React)"
-        UI[User Dashboard]
-        Store[Zustand Store]
-        WS_Client[WebSocket Client]
-    end
-
-    subgraph "Backend (Node.js)"
-        Server[Express Server]
-        WS_Server[WebSocket Server]
-        Manager[C Engine Manager]
-    end
-
-    subgraph "Core Engine (C)"
-        Threads[Producer/Consumer Threads]
-        Buffer[Circular Buffer]
-        Sem[Semaphores]
-    end
-
-    UI -->|Start Simulation| Server
-    Server --> Manager
-    Manager -->|Spawn| Threads
-    Threads -->|wait/post| Sem
-    Threads -->|insert/remove| Buffer
-    Threads -->|STDOUT JSON| Manager
-    Manager --> WS_Server
-    WS_Server --> WS_Client
-    WS_Client --> Store
-    Store --> UI
-```
+![Project Flow Diagram](./diagram.png)
 
 ## 6. Revision Tracking on GitHub
 - **Repository Name**: mobin2706/Process-Synchronization-Simulator
