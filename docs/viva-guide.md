@@ -97,8 +97,10 @@ sem_post(empty);
 ### Frontend Architecture
 - **React** with functional components and hooks
 - **useWebSocket** custom hook manages connection and state
-- **Framer Motion** animates state transitions
-- Components: Dashboard → Buffer, Producers, Consumers, Semaphores, Timeline
+- **12x12 Grid System**: Optimized layout for high-density information display
+- **Thread State Glossary**: Dedicated panel for real-time lifecycle tracking
+- **Framer Motion**: Animates state transitions and critical section entries
+- **Components**: Sidebar (Config + Glossary), Main View (Nodes + Buffer), Analytics (Timeline + Throughput)
 
 ---
 

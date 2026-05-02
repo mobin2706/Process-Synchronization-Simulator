@@ -14,10 +14,10 @@ To launch the application, ensure you have both the backend and frontend running
 3. Open your web browser and navigate to `http://localhost:3001`.
 
 ### 1.2 The Dashboard Overview
-When you open the application, you will see a dark-themed, glassmorphic dashboard divided into three main areas:
-- **Left Sidebar**: The Control Panel for configuring parameters.
-- **Top Row**: The data flow visualization (Producers → Circular Buffer → Consumers).
-- **Bottom Rows**: Analytical tools (Semaphore States, Performance Metrics, and Event Timeline).
+When you open the application, you will see a dark-themed, glassmorphic dashboard divided into three high-fidelity zones:
+- **Left Sidebar**: The **System Configuration** command center and **Thread State Glossary**.
+- **Main Area**: Real-time visualization of Producers, the **Circular Buffer**, Consumers, and Semaphore Gauges.
+- **Full-Width Analytics**: The **Event Timeline** and **Throughput Graph** spanning the entire bottom of the screen for deep data analysis.
 
 ---
 
@@ -35,9 +35,9 @@ The Control Panel (left sidebar) allows you to customize the simulation paramete
 - **Backend Delay (ms)**: The simulated "work" time for each thread (0ms to 2000ms). A higher delay slows down the C-engine generation, making it easier to watch the states change.
 
 ### Playback Controls
-- **Start Simulation / Stop Backend**: This primary button compiles and runs the C-engine. Once clicked, the simulation begins generating events. Clicking "Stop Backend" forcibly terminates the C-engine.
-- **Pause / Resume**: Temporarily freezes the visual playback engine. The backend continues to buffer events in the background, ensuring no data is lost.
-- **Step**: Only available while Paused. Clicking "Step" advances the UI by exactly one event, allowing you to carefully trace the synchronization logic step-by-step.
+- **EXECUTE**: The primary action button to launch the C-engine. Once clicked, it turns into a "RUNNING" indicator.
+- **PAUSE / RESUME**: Temporarily freezes the visual playback engine. The button is color-coded to indicate state (Amber for Pause, Cyan for Resume).
+- **RESET**: Clears the current simulation state, resets the buffer, and wipes the timeline for a fresh start.
 - **Playback Speed**: Adjust the speed at which the UI consumes events from the queue (0.5x, 1x, or 2x speed).
 
 ---

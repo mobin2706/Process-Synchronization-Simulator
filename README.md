@@ -33,11 +33,13 @@ A production-level project that simulates the **Producer-Consumer problem** usin
 - ✅ Circular buffer with visual representation
 - ✅ Three POSIX semaphores: `mutex`, `empty`, `full`
 - ✅ Real-time WebSocket streaming
-- ✅ Animated thread state indicators (Running/Waiting/Blocked/Done)
-- ✅ Event timeline with color-coded entries
-- ✅ Performance metrics (throughput, uptime)
-- ✅ Glassmorphism dark-mode UI
-- ✅ Configurable parameters via slider controls
+- ✅ Animated thread state indicators with dedicated **Thread State Glossary**
+- ✅ High-fidelity **Event Timeline** with thread-specific branding and continuity
+- ✅ Full-width **Throughput Over Time** analysis
+- ✅ Optimized **12x12 Grid Layout** with expanded configuration sidebar
+- ✅ User-friendly action controls (Execute, Pause, Reset)
+- ✅ Glassmorphism dark-mode UI with pulsing state indicators
+- ✅ Configurable parameters via color-coded slider controls
 - ✅ Makefile for C compilation
 - ✅ Unit tests for buffer module
 
