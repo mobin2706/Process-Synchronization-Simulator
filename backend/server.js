@@ -61,10 +61,22 @@ app.get('/health', (req, res) => {
 // ── Serve Frontend (Production Build) ──────────────────────────
 const path = require('path');
 const FRONTEND_DIST = path.resolve(__dirname, '../frontend/dist');
+
+logger.info(`Serving static files from: ${FRONTEND_DIST}`);
+if (!require('fs').existsSync(path.join(FRONTEND_DIST, 'index.html'))) {
+  logger.error(`CRITICAL: index.html not found at ${path.join(FRONTEND_DIST, 'index.html')}`);
+}
+
 app.use(express.static(FRONTEND_DIST));
 // SPA fallback — serve index.html for any non-API route
 app.get('*', (req, res) => {
-  res.sendFile(path.join(FRONTEND_DIST, 'index.html'));
+  const indexPath = path.join(FRONTEND_DIST, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      logger.error(`Error sending index.html: ${err.message}`);
+      res.status(500).send("Frontend build not found. Please check deployment logs.");
+    }
+  });
 });
 
 // ── HTTP + WebSocket Server ────────────────────────────────────

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: process-sync-simulator
+    env: docker
+    dockerfilePath: Dockerfile.backend
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 3001
