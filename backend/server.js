@@ -60,7 +60,15 @@ app.get('/health', (req, res) => {
 
 // ── Serve Frontend (Production Build) ──────────────────────────
 const path = require('path');
-const FRONTEND_DIST = path.resolve(__dirname, '../frontend/dist');
+let FRONTEND_DIST = path.resolve(__dirname, '../frontend/dist');
+
+// Fallback for different container structures
+if (!require('fs').existsSync(FRONTEND_DIST)) {
+  FRONTEND_DIST = path.resolve(process.cwd(), 'frontend/dist');
+}
+if (!require('fs').existsSync(FRONTEND_DIST)) {
+  FRONTEND_DIST = path.resolve('/app/frontend/dist');
+}
 
 logger.info(`Serving static files from: ${FRONTEND_DIST}`);
 if (!require('fs').existsSync(path.join(FRONTEND_DIST, 'index.html'))) {
