@@ -13,6 +13,7 @@ let reconnectTimer = null;
 let playbackInterval = null;
 
 export const useSimulationStore = create((set, get) => ({
+  sessionId: Math.random().toString(36).substring(2, 15),
   // ── Connection State ─────────────────────────────────────────
   connected: false,
   connectionAttempts: 0,
@@ -49,7 +50,9 @@ export const useSimulationStore = create((set, get) => ({
   connect: () => {
     if (ws?.readyState === WebSocket.OPEN) return;
     set({ reconnecting: get().connectionAttempts > 0 });
-    ws = new WebSocket(WS_URL);
+    const url = new URL(WS_URL);
+    url.searchParams.set('sessionId', get().sessionId);
+    ws = new WebSocket(url.toString());
 
     ws.onopen = () => set({
       connected: true,

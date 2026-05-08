@@ -16,7 +16,7 @@ module.exports = function(engine, rateLimit) {
   router.post('/start-simulation', (req, res) => {
     const startMs = Date.now();
 
-    if (engine.isRunning) {
+    if (req.engine.isRunning) {
       return res.status(409).json({ error: 'Simulation already running' });
     }
 
@@ -46,12 +46,12 @@ module.exports = function(engine, rateLimit) {
     const config = { producers, consumers, bufferSize, iterations, delay };
 
     // Compile the C engine first
-    if (!engine.compile()) {
+    if (!req.engine.compile()) {
       return res.status(500).json({ error: 'Failed to compile C engine' });
     }
 
     logger.info(`Starting simulation: ${JSON.stringify(config)} (request took ${Date.now() - startMs}ms)`);
-    engine.start(config);
+    req.engine.start(config);
     res.json({ status: 'started', config });
   });
 
@@ -60,11 +60,11 @@ module.exports = function(engine, rateLimit) {
    * Stops the running simulation.
    */
   router.post('/stop-simulation', (req, res) => {
-    if (!engine.isRunning) {
+    if (!req.engine.isRunning) {
       return res.status(409).json({ error: 'No simulation running' });
     }
 
-    engine.stop();
+    req.engine.stop();
     res.json({ status: 'stopping' });
   });
 
@@ -89,7 +89,7 @@ module.exports = function(engine, rateLimit) {
    * Returns current simulation status.
    */
   router.get('/status', (req, res) => {
-    res.json(engine.getStatus());
+    res.json(req.engine.getStatus());
   });
 
   return router;

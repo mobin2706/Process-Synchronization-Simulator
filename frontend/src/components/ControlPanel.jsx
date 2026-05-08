@@ -15,7 +15,11 @@ export default function ControlPanel() {
     reset();
     try {
       await fetch(`${API_BASE}/api/start-simulation`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Session-ID': useSimulationStore.getState().sessionId
+        },
         body: JSON.stringify(config)
       });
     } catch (err) { console.error('Start failed:', err); }

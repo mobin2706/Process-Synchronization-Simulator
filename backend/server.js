@@ -55,19 +55,61 @@ function rateLimit(key, windowMs = 2000) {
   return true;
 }
 
-// ── Engine Manager ─────────────────────────────────────────────
-const engine = new EngineManager();
+// ── Sessions Manager ───────────────────────────────────────────
+const sessions = new Map(); // sessionId -> { engine, ws }
+
+/**
+ * Get or create an engine for a session.
+ */
+function getEngine(sessionId) {
+  if (!sessionId) return null;
+  if (!sessions.has(sessionId)) {
+    logger.info(`Creating new engine for session: ${sessionId}`);
+    const engine = new EngineManager();
+    sessions.set(sessionId, { engine, ws: null });
+    
+    // Wire up events for this specific engine
+    engine.on('data', (event) => {
+      const session = sessions.get(sessionId);
+      if (session?.ws && session.ws.readyState === 1) {
+        session.ws.send(JSON.stringify(event));
+      }
+    });
+
+    engine.on('close', (info) => {
+      const session = sessions.get(sessionId);
+      if (session?.ws && session.ws.readyState === 1) {
+        session.ws.send(JSON.stringify({ type: 'simulation_end', ...info }));
+      }
+    });
+
+    engine.on('error', (error) => {
+      const session = sessions.get(sessionId);
+      if (session?.ws && session.ws.readyState === 1) {
+        session.ws.send(JSON.stringify({ type: 'error', ...error }));
+      }
+    });
+  }
+  return sessions.get(sessionId).engine;
+}
 
 // ── REST API Routes ────────────────────────────────────────────
-app.use('/api', simulationRoutes(engine, rateLimit));
+// Middleware to inject the correct engine based on X-Session-ID header
+app.use('/api', (req, res, next) => {
+  const sessionId = req.headers['x-session-id'];
+  if (!sessionId && req.path !== '/health') {
+    return res.status(401).json({ error: 'Missing X-Session-ID header' });
+  }
+  req.engine = getEngine(sessionId);
+  next();
+}, simulationRoutes(null, rateLimit));
 
 // Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    connections: clients.size,
-    simulationRunning: engine.isRunning
+    sessions: sessions.size
   });
 });
 
@@ -103,10 +145,23 @@ const heartbeat = setInterval(() => {
   }
 }, HEARTBEAT_INTERVAL);
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const sessionId = url.searchParams.get('sessionId');
+
+  if (!sessionId) {
+    logger.warn('WebSocket connection attempted without sessionId');
+    return ws.terminate();
+  }
+
   ws.isAlive = true;
-  clients.add(ws);
-  logger.info(`WebSocket client connected (total: ${clients.size})`);
+  ws.sessionId = sessionId;
+  
+  const engine = getEngine(sessionId);
+  const session = sessions.get(sessionId);
+  session.ws = ws;
+
+  logger.info(`WebSocket client connected (session: ${sessionId}, total: ${sessions.size})`);
 
   // Send current status on connect
   ws.send(JSON.stringify({
@@ -117,44 +172,24 @@ wss.on('connection', (ws) => {
   ws.on('pong', () => { ws.isAlive = true; });
 
   ws.on('close', () => {
-    clients.delete(ws);
-    logger.info(`WebSocket client disconnected (total: ${clients.size})`);
+    logger.info(`WebSocket client disconnected (session: ${sessionId})`);
+    const session = sessions.get(sessionId);
+    if (session) {
+      if (session.engine.isRunning) {
+        session.engine.stop();
+      }
+      sessions.delete(sessionId);
+    }
   });
 
   ws.on('error', (err) => {
-    logger.error(`WebSocket error: ${err.message}`);
-    clients.delete(ws);
+    logger.error(`WebSocket error for session ${sessionId}: ${err.message}`);
+    sessions.delete(sessionId);
   });
 });
 
-/**
- * Broadcast a message to all connected WebSocket clients.
- */
-function broadcast(data) {
-  const message = JSON.stringify(data);
-  for (const client of clients) {
-    if (client.readyState === 1) { // OPEN
-      client.send(message);
-    }
-  }
-}
-
 // ── Engine Event Handlers ──────────────────────────────────────
-
-// Stream simulation data to all WebSocket clients
-engine.on('data', (event) => {
-  broadcast(event);
-});
-
-// Notify clients when simulation ends
-engine.on('close', (info) => {
-  broadcast({ type: 'simulation_end', ...info });
-});
-
-// Notify clients on errors
-engine.on('error', (error) => {
-  broadcast({ type: 'error', ...error });
-});
+// (Handled individually within getEngine() now)
 
 // ── Graceful Shutdown ──────────────────────────────────────────
 function gracefulShutdown(signal) {
@@ -162,26 +197,20 @@ function gracefulShutdown(signal) {
   
   clearInterval(heartbeat);
   
-  // Stop any running simulation
-  if (engine.isRunning) {
-    engine.stop();
-  }
-
-  // Close all WebSocket connections
-  for (const client of clients) {
-    client.close(1001, 'Server shutting down');
+  // Stop all running simulations
+  for (const [sessionId, session] of sessions) {
+    if (session.engine.isRunning) {
+      session.engine.stop();
+    }
+    if (session.ws) {
+      session.ws.close(1001, 'Server shutting down');
+    }
   }
 
   server.close(() => {
     logger.info('Server closed');
     process.exit(0);
   });
-
-  // Force exit after 5 seconds
-  setTimeout(() => {
-    logger.error('Forced shutdown after timeout');
-    process.exit(1);
-  }, 5000);
 }
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
